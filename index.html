@@ -1,25 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" />
 	<title>FP-Tree Simulator</title>
 
-	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-	<link rel="stylesheet" href="../bootstrap/css/bootstrap.min.css" />
+	<style>
+	.tree ul {
+		padding-top: 20px; position: relative;
+		transition: all 0.5s;
+	}
+
+	.tree li {
+		float: left; text-align: center;
+		list-style-type: none;
+		position: relative;
+		padding: 20px 5px 0 5px;
+		transition: all 0.5s;
+	}
+
+	/*We will use ::before and ::after to draw the connectors*/
+
+	.tree li::before, .tree li::after{
+		content: '';
+		position: absolute; top: 0; right: 50%;
+		border-top: 1px solid #ccc;
+		width: 50%; height: 20px;
+	}
+	.tree li::after{
+		right: auto; left: 50%;
+		border-left: 1px solid #ccc;
+	}
+
+	/*We need to remove left-right connectors from elements without 
+	any siblings*/
+	.tree li:only-child::after, .tree li:only-child::before {
+		display: none;
+	}
+
+	/*Remove space from the top of single children*/
+	.tree li:only-child{ padding-top: 0;}
+
+	/*Remove left connector from first child and 
+	right connector from last child*/
+	.tree li:first-child::before, .tree li:last-child::after{
+		border: 0 none;
+	}
+	/*Adding back the vertical connector to the last nodes*/
+	.tree li:last-child::before{
+		border-right: 1px solid #ccc;
+		border-radius: 0 5px 0 0;
+	}
+	.tree li:first-child::after{
+		border-radius: 5px 0 0 0;
+	}
+
+	/*Time to add downward connectors from parents*/
+	.tree ul ul::before{
+		content: '';
+		position: absolute; top: 0; left: 50%;
+		border-left: 1px solid #ccc;
+		width: 0; height: 20px;
+	}
+
+	.tree li a{
+		border: 1px solid #ccc;
+		padding: 5px 10px;
+		text-decoration: none;
+		font-size: 16px;
+		display: inline-block;
+		border-radius: 25px;
+		transition: all 0.5s;
+	}
+	.tree li a.selected {
+		color: #fff;
+		background: #e33;
+	}
+
+	/*Time for some hover effects*/
+	/*We will apply the hover effect the the lineage of the element also*/
+	.tree li a:hover, .tree li a:hover+ul li a {
+		background: #c8e4f8; color: #000; border: 1px solid #94a0b4;
+	}
+	/*Connector styles on hover*/
+	.tree li a:hover+ul li::after, 
+	.tree li a:hover+ul li::before, 
+	.tree li a:hover+ul::before, 
+	.tree li a:hover+ul ul::before{
+		border-color:  #94a0b4;
+	}
+	</style>
 </head>
 <body>
-	<div class="wrapper">	
-		<h1>FP-Tree Simulator</h1>
+<div class="container">	
+	<h1>FP-Tree Simulator</h1>
 
-		<textarea id="input-area" class="form-control span8" rows="10">{f,a,c,d,g,i,m,p}
+	<fieldset>
+		<div class="form-group">
+			<label for="input-area">Input</label>
+			<textarea id="input-area" class="form-control" rows="10">{f,a,c,d,g,i,m,p}
 {a,b,c,f,l,m,o}
 {b,f,h,j,o,w}
 {b,c,k,s,p}
 {a,f,c,e,l,p,m,n}</textarea>
-		<button class="btn btn-info" onclick="FPTreeSim.cleanData()">Submit</button>
-	</div>
+		</div>
+	
+
+		<div class="form-inline">
+			<div class="form-group">
+			<label for="input-area">Min Support</label>
+			<input type="text" id="input-min-support" class="form-control" value="3">
+			</div>
+
+			<button class="btn btn-info" onclick="FPTreeSim.cleanData()">Submit</button>
+		</div>
+	</fieldset>
 
 	<div class="row">
-		<div class="span6">
+		<div class="col-xs-6">
 			<table class="table table-striped">
 				<thead>
 					<tr>
@@ -32,7 +132,7 @@
 				<tbody id="table-items"></tbody>
 			</table>
 		</div>
-		<div class="span6">
+		<div class="col-xs-6">
 			<table class="table table-striped">
 				<thead>
 					<tr>
@@ -45,27 +145,35 @@
 		</div>
 	</div>
 
-	<div id="fp-graph"><div id="node" class="label label-into">{}</div></div>
-	<div id="fp-graph-0"></div>
-	<div id="fp-graph-1"></div>
-	<div id="fp-graph-2"></div>
-	<div id="fp-graph-3"></div>
-	<div id="fp-graph-4"></div>
-	<div id="fp-graph-5"></div>
-	<div id="fp-graph-6"></div>
+	<div id="fp-tree" class="tree" style="min-height:500px"></div>
 
+</div>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
 var FPTreeSim = {
-	sets: [],
-	items: {},
+	sets 			: [],
+	items 			: {},
 	orderedFreqItems: [],
-	minSupport: 3,
-	currentNode: 0,
-	nodeAnimation: null,
+	minSupport 		: 0,
+	currentNodeLevel: 0,
+	nodeAnimation 	: null,
+	prevNode 		: 'tree-origin',
+
 	cleanData: function() {
+		FPTreeSim.sets 				= [];
+		FPTreeSim.items 			= {};
+		FPTreeSim.orderedFreqItems 	= [];
+		FPTreeSim.minSupport 		= 0;
+		FPTreeSim.currentNodeLevel	= 0;
+		FPTreeSim.prevNode 			= 'tree-origin';
+
+		clearInterval(FPTreeSim.nodeAnimation);
+		FPTreeSim.nodeAnimation = null;
+
 		var text = document.getElementById('input-area').value.toLowerCase();
 		document.getElementById('input-area').value = text.replace(/[^a-z{},\n]/ig, '');
 
+		FPTreeSim.minSupport = parseInt(document.getElementById('input-min-support').value);
 		FPTreeSim.identifySets(text);
 	},
 	identifySets: function(text) {
@@ -108,50 +216,63 @@ var FPTreeSim = {
 		FPTreeSim.renderItemTable();
 	},
 	renderItemTable: function() {
-		var row = '', freqItems = [];
+		var row = '', freqItems = '';
 		for(var i = 0; i < FPTreeSim.sets.length; i++) {
-			freqItems = [];
-			row += '<tr><td>' + i + '</td><td>{' + FPTreeSim.sets[i].join(', ') + '}</td>';
+			freqItems = '';
+			row += '<tr><td>' + (i + 1) + '</td><td>{' + FPTreeSim.sets[i].join(', ') + '}</td>';
 			for(var j in FPTreeSim.items) {
 				if(FPTreeSim.items[j] >= FPTreeSim.minSupport && FPTreeSim.sets[i].indexOf(j) > -1) {
-					freqItems.push(j);
 					FPTreeSim.orderedFreqItems.push(j);
+					freqItems += '<button class="btn btn-default">' + j + '</button>';
 				}
 			}
-			row += '<td>{' + freqItems.join(',') + '}</td></tr>';
+			row += '<td>{' + freqItems + '}</td></tr>';
 			FPTreeSim.orderedFreqItems.push('|');
 		}
 		document.getElementById('table-items').innerHTML = row;
 		FPTreeSim.renderGraph();
 	},
 	renderGraph: function() {
-		//for(var i = 0; i < orderedFreqItems.length; i++) {
-
-		//}
-		FPTreeSim.nodeAnimation = setInterval(FPTreeSim.renderNode, 1000);
+		document.getElementById('fp-tree').innerHTML = '<ul><li id="tree-origin">' + 
+		'<a href="#" id="tree-origin-label">{}</a><ul id="tree-origin-children"></ul></li></ul>';
+		FPTreeSim.nodeAnimation = setInterval(FPTreeSim.renderNode, 1800);
 	},
 	renderNode: function() {
+		$('a.selected').removeClass('selected');
 		var item = FPTreeSim.orderedFreqItems.splice(0, 1);
 		if(item.length == 0) {
 			clearInterval(FPTreeSim.nodeAnimation);
 			FPTreeSim.nodeAnimation = null;
 		}
 		else if(item.toString() === '|') { 
-			//document.getElementById('fp-graph-0').innerHTML += '<div></div>';
-			FPTreeSim.currentNode = 0;
+			FPTreeSim.currentNodeLevel = 0;
+			FPTreeSim.prevNode = 'tree-origin';
 		}	
 		else {
-			var itemNode = document.getElementById('node-' + item + '-' + FPTreeSim.currentNode);
+			var itemNode = document.getElementById('tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label');
 			if(itemNode == null) {
-				document.getElementById('fp-graph-' + FPTreeSim.currentNode).innerHTML += '<div id="node-' + 
-				item + '-' + FPTreeSim.currentNode + '" class="label label-into">' + item + ": 1<div>";
+				document.getElementById(FPTreeSim.prevNode + '-children').innerHTML += '<li id="tree-node-' + 
+				item + '-' + FPTreeSim.currentNodeLevel + '">' + 
+				'<a href="#" id="tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label">' + 
+				item + ': 0</a><ul id="tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + 
+				'-children" class="hide"></ul></li>';
+				document.getElementById(FPTreeSim.prevNode + '-children').className = '';
+
+				itemNode = document.getElementById('tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label');
 			}
-			else {
+
+			itemNode.className = 'selected';
+			setTimeout(function() {
 				var comps = itemNode.innerHTML.split(':');
 				itemNode.innerHTML = comps[0] + ': ' + (parseInt(comps[1]) + 1);
-			}
-			FPTreeSim.currentNode++;
+			}, 900);
+
+			FPTreeSim.prevNode = 'tree-node-' + item + '-' + FPTreeSim.currentNodeLevel;
+			FPTreeSim.currentNodeLevel++;
 		}
+
+		document.getElementById('level').innerHTML = FPTreeSim.currentNodeLevel;
+		document.getElementById('prevnode').innerHTML = FPTreeSim.prevNode;
 	}
 };
 </script>
