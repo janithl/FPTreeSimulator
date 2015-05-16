@@ -153,19 +153,25 @@
 var FPTreeSim = {
 	sets 			: [],
 	items 			: {},
-	orderedFreqItems: [],
+	
 	minSupport 		: 0,
-	currentNodeLevel: 0,
-	nodeAnimation 	: null,
-	prevNode 		: 'tree-origin',
+	orderedFreqItems: [],
 
+	prevNode 		: 'tree-origin',
+	currentNodeLevel: 0,
+	currentRowLevel : 0,
+	nodeAnimation 	: null,
+	
 	cleanData: function() {
 		FPTreeSim.sets 				= [];
 		FPTreeSim.items 			= {};
-		FPTreeSim.orderedFreqItems 	= [];
+		
 		FPTreeSim.minSupport 		= 0;
-		FPTreeSim.currentNodeLevel	= 0;
+		FPTreeSim.orderedFreqItems 	= [];
+		
 		FPTreeSim.prevNode 			= 'tree-origin';
+		FPTreeSim.currentNodeLevel	= 0;
+		FPTreeSim.currentRowLevel	= 0;
 
 		clearInterval(FPTreeSim.nodeAnimation);
 		FPTreeSim.nodeAnimation = null;
@@ -223,7 +229,7 @@ var FPTreeSim = {
 			for(var j in FPTreeSim.items) {
 				if(FPTreeSim.items[j] >= FPTreeSim.minSupport && FPTreeSim.sets[i].indexOf(j) > -1) {
 					FPTreeSim.orderedFreqItems.push(j);
-					freqItems += '<button class="btn btn-default">' + j + '</button>';
+					freqItems += '<span id="freq-item-' + j + '-' + i + '" class="label label-default">' + j + '</span> ';
 				}
 			}
 			row += '<td>{' + freqItems + '}</td></tr>';
@@ -246,6 +252,7 @@ var FPTreeSim = {
 		}
 		else if(item.toString() === '|') { 
 			FPTreeSim.currentNodeLevel = 0;
+			FPTreeSim.currentRowLevel++;
 			FPTreeSim.prevNode = 'tree-origin';
 		}	
 		else {
@@ -261,7 +268,10 @@ var FPTreeSim = {
 				itemNode = document.getElementById('tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label');
 			}
 
+			/** highlight graph node and freq items row item */
 			itemNode.className = 'selected';
+			document.getElementById('freq-item-' + item + '-' + FPTreeSim.currentRowLevel).className = 'label label-info';
+
 			setTimeout(function() {
 				var comps = itemNode.innerHTML.split(':');
 				itemNode.innerHTML = comps[0] + ': ' + (parseInt(comps[1]) + 1);
