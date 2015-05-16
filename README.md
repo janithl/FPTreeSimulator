@@ -5,6 +5,8 @@ from a list of frequent items. Accepts input in the form of newline-separated
 sets of itemsets, gets the frequent items depending on any provided min support 
 value and generates an FP-tree from those items.
 
+Uses [CSS3 Family Tree](http://thecodeplayer.com/walkthrough/css3-family-tree).
+
 License
 -------
 
