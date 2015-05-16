@@ -67,16 +67,16 @@
 
 	.tree li a{
 		border: 1px solid #ccc;
-		padding: 5px 10px;
+		padding: 4px 8px;
 		text-decoration: none;
-		font-size: 16px;
+		font-weight: 900;
 		display: inline-block;
-		border-radius: 25px;
+		border-radius: 10px;
 		transition: all 0.5s;
 	}
 	.tree li a.selected {
-		color: #fff;
-		background: #e33;
+		color: #ffffff;
+		background-color:  #5bc0de;;
 	}
 
 	/*Time for some hover effects*/
@@ -261,22 +261,22 @@ var FPTreeSim = {
 				document.getElementById(FPTreeSim.prevNode + '-children').innerHTML += '<li id="tree-node-' + 
 				item + '-' + FPTreeSim.currentNodeLevel + '">' + 
 				'<a href="#" id="tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label">' + 
-				item + ': 0</a><ul id="tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + 
+				item + ': 1</a><ul id="tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + 
 				'-children" class="hide"></ul></li>';
 				document.getElementById(FPTreeSim.prevNode + '-children').className = '';
 
 				itemNode = document.getElementById('tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label');
 			}
+			else {
+				setTimeout(function() {
+					var comps = itemNode.innerHTML.split(':');
+					itemNode.innerHTML = comps[0] + ': ' + (parseInt(comps[1]) + 1);
+				}, 900);
+			}
 
 			/** highlight graph node and freq items row item */
 			itemNode.className = 'selected';
 			document.getElementById('freq-item-' + item + '-' + FPTreeSim.currentRowLevel).className = 'label label-info';
-
-			setTimeout(function() {
-				var comps = itemNode.innerHTML.split(':');
-				itemNode.innerHTML = comps[0] + ': ' + (parseInt(comps[1]) + 1);
-			}, 900);
-
 			FPTreeSim.prevNode = 'tree-node-' + item + '-' + FPTreeSim.currentNodeLevel;
 			FPTreeSim.currentNodeLevel++;
 		}
