@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>FP-Tree Simulator</title>
+
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+	<link rel="stylesheet" href="../bootstrap/css/bootstrap.min.css" />
+</head>
+<body>
+	<div class="wrapper">	
+		<h1>FP-Tree Simulator</h1>
+
+		<textarea id="input-area" class="form-control span8" rows="10">{f,a,c,d,g,i,m,p}
+{a,b,c,f,l,m,o}
+{b,f,h,j,o,w}
+{b,c,k,s,p}
+{a,f,c,e,l,p,m,n}</textarea>
+		<button class="btn btn-info" onclick="FPTreeSim.cleanData()">Submit</button>
+	</div>
+
+	<div class="row">
+		<div class="span6">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Row #</th>
+						<th>Items</th>
+						<th>Frequent Items</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="table-items"></tbody>
+			</table>
+		</div>
+		<div class="span6">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Item</th>
+						<th>Frequency</th>
+					</tr>
+				</thead>
+				<tbody id="table-freq"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<div id="fp-graph"><div id="node" class="label label-into">{}</div></div>
+	<div id="fp-graph-0"></div>
+	<div id="fp-graph-1"></div>
+	<div id="fp-graph-2"></div>
+	<div id="fp-graph-3"></div>
+	<div id="fp-graph-4"></div>
+	<div id="fp-graph-5"></div>
+	<div id="fp-graph-6"></div>
+
+<script type="text/javascript">
+var FPTreeSim = {
+	sets: [],
+	items: {},
+	orderedFreqItems: [],
+	minSupport: 3,
+	currentNode: 0,
+	nodeAnimation: null,
+	cleanData: function() {
+		var text = document.getElementById('input-area').value.toLowerCase();
+		document.getElementById('input-area').value = text.replace(/[^a-z{},\n]/ig, '');
+
+		FPTreeSim.identifySets(text);
+	},
+	identifySets: function(text) {
+		var cansets = text.replace(/[{}]/ig, '').split('\n');
+		for(var i = 0; i < cansets.length; i++) {
+			cansets[i] = cansets[i].replace(/[\s]/ig, '').split(',');
+		}
+
+		FPTreeSim.sets = cansets;
+		FPTreeSim.getItemCounts();
+	},
+	getItemCounts: function() {
+		for(var i = 0; i < FPTreeSim.sets.length; i++) {
+			for(var j = 0; j < FPTreeSim.sets[i].length; j++) {
+				var item = FPTreeSim.sets[i][j];
+				if(FPTreeSim.items.hasOwnProperty(item)) {
+					FPTreeSim.items[item] += 1;
+				}
+				else if(item !== '') {
+					FPTreeSim.items[item] = 1;
+				}
+			}
+		}
+
+		FPTreeSim.renderFrequentItems();
+	},
+	renderFrequentItems: function() {
+		var row = '', itemlist = [];
+		for(var i in FPTreeSim.items) {
+			if(FPTreeSim.items[i] >= FPTreeSim.minSupport) {
+				itemlist.push({name: i, count: FPTreeSim.items[i]});
+			}
+		}
+		itemlist.sort(function(a, b) { return b.count - a.count; });
+		for(var j = 0; j < itemlist.length; j++) {
+			row += '<tr><td>' + itemlist[j].name + '</td><td>' + itemlist[j].count + '</td></tr>';
+		}
+		
+		document.getElementById('table-freq').innerHTML = row;
+		FPTreeSim.renderItemTable();
+	},
+	renderItemTable: function() {
+		var row = '', freqItems = [];
+		for(var i = 0; i < FPTreeSim.sets.length; i++) {
+			freqItems = [];
+			row += '<tr><td>' + i + '</td><td>{' + FPTreeSim.sets[i].join(', ') + '}</td>';
+			for(var j in FPTreeSim.items) {
+				if(FPTreeSim.items[j] >= FPTreeSim.minSupport && FPTreeSim.sets[i].indexOf(j) > -1) {
+					freqItems.push(j);
+					FPTreeSim.orderedFreqItems.push(j);
+				}
+			}
+			row += '<td>{' + freqItems.join(',') + '}</td></tr>';
+			FPTreeSim.orderedFreqItems.push('|');
+		}
+		document.getElementById('table-items').innerHTML = row;
+		FPTreeSim.renderGraph();
+	},
+	renderGraph: function() {
+		//for(var i = 0; i < orderedFreqItems.length; i++) {
+
+		//}
+		FPTreeSim.nodeAnimation = setInterval(FPTreeSim.renderNode, 1000);
+	},
+	renderNode: function() {
+		var item = FPTreeSim.orderedFreqItems.splice(0, 1);
+		if(item.length == 0) {
+			clearInterval(FPTreeSim.nodeAnimation);
+			FPTreeSim.nodeAnimation = null;
+		}
+		else if(item.toString() === '|') { 
+			//document.getElementById('fp-graph-0').innerHTML += '<div></div>';
+			FPTreeSim.currentNode = 0;
+		}	
+		else {
+			var itemNode = document.getElementById('node-' + item + '-' + FPTreeSim.currentNode);
+			if(itemNode == null) {
+				document.getElementById('fp-graph-' + FPTreeSim.currentNode).innerHTML += '<div id="node-' + 
+				item + '-' + FPTreeSim.currentNode + '" class="label label-into">' + item + ": 1<div>";
+			}
+			else {
+				var comps = itemNode.innerHTML.split(':');
+				itemNode.innerHTML = comps[0] + ': ' + (parseInt(comps[1]) + 1);
+			}
+			FPTreeSim.currentNode++;
+		}
+	}
+};
+</script>
+</body>
+</html>
