@@ -147,6 +147,11 @@
 
 	<div id="fp-tree" class="tree" style="min-height:500px"></div>
 
+	<p>
+		<hr>
+		Released under the MIT License | <a href="https://github.com/janithl/FPTreeSimulator">Source Code</a>
+	</p>
+
 </div>
 <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
@@ -246,7 +251,7 @@ var FPTreeSim = {
 	renderNode: function() {
 		$('a.selected').removeClass('selected');
 		var item = FPTreeSim.orderedFreqItems.splice(0, 1);
-		if(item.length == 0) {
+		if(item.length === 0) {
 			clearInterval(FPTreeSim.nodeAnimation);
 			FPTreeSim.nodeAnimation = null;
 		}
@@ -257,7 +262,7 @@ var FPTreeSim = {
 		}	
 		else {
 			var itemNode = document.getElementById('tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label');
-			if(itemNode == null) {
+			if(itemNode === null || itemNode.parentNode.parentNode.id !== FPTreeSim.prevNode + '-children') {
 				document.getElementById(FPTreeSim.prevNode + '-children').innerHTML += '<li id="tree-node-' + 
 				item + '-' + FPTreeSim.currentNodeLevel + '">' + 
 				'<a href="#" id="tree-node-' + item + '-' + FPTreeSim.currentNodeLevel + '-label">' + 
@@ -280,9 +285,6 @@ var FPTreeSim = {
 			FPTreeSim.prevNode = 'tree-node-' + item + '-' + FPTreeSim.currentNodeLevel;
 			FPTreeSim.currentNodeLevel++;
 		}
-
-		document.getElementById('level').innerHTML = FPTreeSim.currentNodeLevel;
-		document.getElementById('prevnode').innerHTML = FPTreeSim.prevNode;
 	}
 };
 </script>
